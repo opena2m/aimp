@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/domains/kinematics.robotic_arm.v1.schema.json",
+  "title": "Domain Schema — kinematics.robotic_arm.v1",
+  "description": "General articulated-arm kinematics. A sequence of motion and tool operations. Typically classified at `restricted` or `hazardous` risk tier depending on end-effector, payload, and workspace.",
+  "type": "object",
+  "required": ["operations"],
+  "properties": {
+    "reference_frame": {
+      "type": "string",
+      "enum": ["world", "base", "tool", "workobject"],
+      "default": "base"
+    },
+    "end_effector": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["parallel_gripper", "suction", "magnet", "dispenser", "probe", "none"]},
+        "grip_force_newton": {"type": "number", "minimum": 0, "maximum": 500},
+        "payload_kg": {"type": "number", "minimum": 0}
+      }
+    },
+    "speed_scale": {
+      "type": "number",
+      "description": "Global speed scale factor, 0.0–1.0. Independent of per-step speed overrides.",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.5
+    },
+    "collision_checking": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean", "default": true},
+        "padding_mm": {"type": "number", "minimum": 0, "default": 5}
+      }
+    },
+    "operations": {
+      "type": "array",
+      "description": "Ordered list of steps. The gateway MUST execute in order unless parallel execution is explicitly enabled per step.",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["step", "type", "pose"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "MOVE_LINEAR"},
+              "pose": {"$ref": "#/$defs/pose"},
+              "speed_mm_per_sec": {"type": "number", "exclusiveMinimum": 0, "maximum": 5000},
+              "blend_radius_mm": {"type": "number", "minimum": 0}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type", "pose"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "MOVE_JOINT"},
+              "pose": {"$ref": "#/$defs/pose"},
+              "speed_percent": {"type": "number", "minimum": 0, "maximum": 100}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type", "joints"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "MOVE_TO_JOINTS"},
+              "joints": {
+                "type": "array",
+                "items": {"type": "number"},
+                "minItems": 1,
+                "maxItems": 12,
+                "description": "Target joint angles in radians."
+              },
+              "speed_percent": {"type": "number", "minimum": 0, "maximum": 100}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "GRIP"},
+              "force_newton": {"type": "number", "minimum": 0},
+              "width_mm": {"type": "number", "minimum": 0}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "RELEASE"}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type", "seconds"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "DWELL"},
+              "seconds": {"type": "number", "minimum": 0}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "type", "channel", "operator", "value"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "type": {"const": "WAIT_FOR_SENSOR"},
+              "channel": {"type": "string"},
+              "operator": {"enum": ["<", "<=", "==", ">=", ">"]},
+              "value": {"type": "number"},
+              "timeout_seconds": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "pose": {
+      "type": "object",
+      "required": ["x_mm", "y_mm", "z_mm"],
+      "properties": {
+        "x_mm": {"type": "number"},
+        "y_mm": {"type": "number"},
+        "z_mm": {"type": "number"},
+        "roll_deg": {"type": "number"},
+        "pitch_deg": {"type": "number"},
+        "yaw_deg": {"type": "number"}
+      }
+    }
+  },
+  "additionalProperties": false
+}

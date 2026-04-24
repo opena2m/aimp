@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/core/job-request.schema.json",
+  "title": "AIMP Job Request (quote / execute)",
+  "description": "Request envelope used for both aimp.quote and aimp.execute. For aimp.execute, either (a) provide a quote_id from a prior aimp.quote, or (b) repeat the full request with envelope.require_approval=false at operator risk (not recommended).",
+  "type": "object",
+  "required": ["aimp_version", "domain", "device_id"],
+  "anyOf": [
+    {"required": ["quote_id"]},
+    {"required": ["payload"]}
+  ],
+  "properties": {
+    "aimp_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.\\-]+)?$",
+      "description": "Semantic version of the AIMP spec the client is targeting.",
+      "examples": ["1.0.0-draft"]
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Client-generated request identifier. ULID RECOMMENDED.",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "If the same key is seen twice, the gateway MUST return the original result.",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Target device as returned by aimp.discover.",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "description": "Fully qualified domain namespace such as `manufacturing.additive.fdm.v1`.",
+      "pattern": "^[a-z0-9][a-z0-9_]*(\\.[a-z0-9][a-z0-9_]*)+\\.v[0-9]+$"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "When present, this request MUST be treated as execution of the previously issued quote. All other parameters MUST match the quoted set."
+    },
+    "asset": {
+      "type": "object",
+      "description": "Optional digital asset the job operates on (STL, PNG, PDF, G-code, protocol file, ...).",
+      "required": ["url", "format", "hash_sha256"],
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "format": {"type": "string", "description": "MIME type or domain-defined format identifier."},
+        "hash_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "payload": {
+      "type": "object",
+      "description": "Domain-specific body, validated against the Domain Schema identified by `domain`."
+    },
+    "logistics": {
+      "type": "object",
+      "description": "Optional logistics block for domains that ship a physical artifact.",
+      "properties": {
+        "carrier_preference": {"type": "string"},
+        "recipient": {
+          "type": "object",
+          "required": ["name", "address_lines", "country"],
+          "properties": {
+            "name": {"type": "string"},
+            "address_lines": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "locality": {"type": "string"},
+            "region": {"type": "string"},
+            "postal_code": {"type": "string"},
+            "country": {"type": "string", "minLength": 2, "maxLength": 2, "description": "ISO 3166-1 alpha-2."}
+          }
+        }
+      }
+    },
+    "budget_limit": {
+      "type": "object",
+      "description": "Upper bound the agent is allowed to spend on this job.",
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": {"type": "number", "exclusiveMinimum": 0},
+        "currency": {"type": "string", "minLength": 3, "maxLength": 3, "description": "ISO 4217."}
+      },
+      "additionalProperties": false
+    },
+    "audit_requirements": {
+      "type": "object",
+      "description": "Closed-loop observation policy for this job.",
+      "properties": {
+        "snapshot_interval_seconds": {"type": "integer", "minimum": 1},
+        "snapshot_channels": {"type": "array", "items": {"type": "string"}},
+        "video_clip_on_state_change": {"type": "boolean"},
+        "sensors": {"type": "array", "items": {"type": "string"}},
+        "ai_vision_checks": {"type": "array", "items": {"type": "string"}},
+        "pause_for_human_at": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "envelope": {
+      "type": "object",
+      "description": "Request-level control flags and auth artifacts.",
+      "properties": {
+        "principal": {
+          "type": "object",
+          "properties": {
+            "kind": {"enum": ["agent", "human", "system"]},
+            "id": {"type": "string"}
+          },
+          "required": ["kind", "id"]
+        },
+        "approval_token": {
+          "type": "string",
+          "description": "Signed approval artifact when policy requires HITL sign-off (see §04.5)."
+        },
+        "require_approval": {
+          "type": "boolean",
+          "default": true
+        },
+        "trace_id": {"type": "string"}
+      }
+    }
+  },
+  "additionalProperties": false
+}

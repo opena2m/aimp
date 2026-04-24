@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/core/telemetry.schema.json",
+  "title": "AIMP Telemetry Record",
+  "description": "Single telemetry snapshot for a job. Returned by GET /v1/jobs/{id}/telemetry and emitted as webhook or stream events.",
+  "type": "object",
+  "required": ["aimp_version", "job_id", "state", "updated_at"],
+  "properties": {
+    "aimp_version": {"type": "string"},
+    "job_id": {"type": "string"},
+    "state": {
+      "enum": [
+        "PENDING", "QUOTED", "LOCKED", "EXECUTING",
+        "AUDITING", "FULFILLING", "COMPLETED",
+        "ABORTED", "FAILED"
+      ]
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "updated_at": {"type": "string", "format": "date-time"},
+    "sensors": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["channel", "value", "unit", "at"],
+            "properties": {
+              "channel": {"type": "string"},
+              "value": {"type": "number"},
+              "unit": {"type": "string"},
+              "at": {"type": "string", "format": "date-time"},
+              "quality": {"enum": ["ok", "degraded", "stale", "error"], "default": "ok"}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["channel", "unit", "series"],
+            "properties": {
+              "channel": {"type": "string"},
+              "unit": {"type": "string"},
+              "series": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["at", "value"],
+                  "properties": {
+                    "at": {"type": "string", "format": "date-time"},
+                    "value": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "media": {
+      "type": "array",
+      "description": "Pre-signed media URLs captured per audit_requirements.",
+      "items": {
+        "type": "object",
+        "required": ["channel", "url", "captured_at", "mime"],
+        "properties": {
+          "channel": {"type": "string"},
+          "url": {"type": "string", "format": "uri"},
+          "captured_at": {"type": "string", "format": "date-time"},
+          "mime": {"type": "string"},
+          "signature": {"type": "string", "description": "Authenticating signature over (job_id, device_serial, captured_at)."}
+        }
+      }
+    },
+    "vision_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check", "verdict", "confidence", "at"],
+        "properties": {
+          "check": {"type": "string"},
+          "verdict": {"enum": ["pass", "warn", "failure", "inconclusive"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "evidence_media": {"type": "array", "items": {"type": "string", "format": "uri"}},
+          "recommended_action": {"enum": ["CONTINUE", "PAUSE", "ABORT"]},
+          "signed_by": {"type": "string"},
+          "at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "human_action_required": {
+      "type": "object",
+      "properties": {
+        "reason": {"type": "string"},
+        "review_url": {"type": "string", "format": "uri"},
+        "expires_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "cost": {
+      "type": "object",
+      "description": "Running cost state, per the five-stage cost lifecycle.",
+      "properties": {
+        "stage": {"enum": ["estimate", "quote", "reserve", "commit", "settle"]},
+        "amount": {"type": "number"},
+        "currency": {"type": "string"}
+      }
+    },
+    "tracking": {
+      "type": "object",
+      "description": "Populated while state == FULFILLING.",
+      "properties": {
+        "carrier": {"type": "string"},
+        "tracking_number": {"type": "string"},
+        "tracking_url": {"type": "string", "format": "uri"}
+      }
+    },
+    "error": {
+      "type": "object",
+      "description": "Present when state in {FAILED, ABORTED}. See §06 Error Codes.",
+      "required": ["code", "category"],
+      "properties": {
+        "code": {"type": "string"},
+        "category": {"type": "string"},
+        "message": {"type": "string"},
+        "retryable": {"type": "boolean"},
+        "details": {"type": "object"}
+      }
+    }
+  },
+  "additionalProperties": false
+}

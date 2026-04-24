@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/domains/thermodynamics.cooking.v1.schema.json",
+  "title": "Domain Schema — thermodynamics.cooking.v1",
+  "description": "General cooking / thermal-processing of food. Covers sous-vide, convection, induction, steam, and combi appliances. Ingredient identity is declared but not executed on — AIMP does not dispatch groceries.",
+  "type": "object",
+  "required": ["recipe_steps"],
+  "properties": {
+    "cuisine_hint": {"type": "string"},
+    "servings": {"type": "integer", "minimum": 1, "maximum": 64},
+    "ingredients": {
+      "type": "array",
+      "description": "Declared pre-loaded ingredients. Appliance verifies weight/sensor when it can.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "quantity": {"type": "number", "minimum": 0},
+          "unit": {"type": "string"},
+          "slot": {"type": "string", "description": "Appliance-specific slot identifier if multi-compartment."}
+        }
+      }
+    },
+    "recipe_steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["step", "mode", "target_temp_celsius", "duration_seconds"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "mode": {"enum": ["sous_vide", "simmer", "poach", "hold"]},
+              "target_temp_celsius": {"type": "number", "minimum": 20, "maximum": 100},
+              "duration_seconds": {"type": "integer", "minimum": 1},
+              "probe_target_celsius": {"type": "number", "minimum": 0, "maximum": 100}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "mode", "target_temp_celsius", "duration_seconds"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "mode": {"enum": ["bake", "convection", "broil", "roast", "air_fry"]},
+              "target_temp_celsius": {"type": "number", "minimum": 50, "maximum": 300},
+              "duration_seconds": {"type": "integer", "minimum": 1},
+              "fan_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+              "humidity_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+              "probe_target_celsius": {"type": "number", "minimum": 0, "maximum": 100}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "mode", "power_percent", "duration_seconds"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "mode": {"enum": ["induction", "gas", "sear"]},
+              "power_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+              "duration_seconds": {"type": "integer", "minimum": 1},
+              "agitation": {"enum": ["none", "stir_slow", "stir_fast", "shake"]}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "mode", "duration_seconds"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "mode": {"const": "rest"},
+              "duration_seconds": {"type": "integer", "minimum": 1},
+              "covered": {"type": "boolean"}
+            }
+          },
+          {
+            "type": "object",
+            "required": ["step", "mode", "target_temp_celsius"],
+            "properties": {
+              "step": {"type": "integer", "minimum": 1},
+              "mode": {"const": "chill"},
+              "target_temp_celsius": {"type": "number", "minimum": -40, "maximum": 30},
+              "max_duration_seconds": {"type": "integer", "minimum": 1}
+            }
+          }
+        ]
+      }
+    },
+    "food_safety": {
+      "type": "object",
+      "description": "Mandatory attestations for regulatory cooking domains.",
+      "properties": {
+        "requires_pasteurization": {"type": "boolean"},
+        "min_core_temp_celsius": {"type": "number"},
+        "min_hold_seconds_at_target": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "additionalProperties": false
+}

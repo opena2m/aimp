@@ -1,0 +1,148 @@
+{
+  "_comment": "AIMP Example 01 — Cloud-print poster, end-to-end. Shows the full discover -> quote -> execute -> telemetry sequence corresponding to Scenario A in §07.",
+
+  "1_discover_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8K9D1SCVRX8N4QX9B2Y1R0P",
+    "device_filter": {
+      "domains": ["manufacturing.print.2d.v1"],
+      "location": {"country": "US"}
+    }
+  },
+
+  "2_discover_response": {
+    "aimp_version": "1.0.0-draft",
+    "devices": [
+      {
+        "device_id": "cloudprint-us-west",
+        "display_name": "Regional Print Hub, Reno NV",
+        "vendor": "PrintfulAPI",
+        "model": "cloudprint-gateway-v3",
+        "firmware": "3.2.11",
+        "location": {"site": "Reno-1", "country": "US"},
+        "domains": [
+          {
+            "domain": "manufacturing.print.2d.v1",
+            "schema_uri": "https://aimp.dev/schemas/domains/manufacturing.print.2d.v1.schema.json",
+            "registered_vision_checks": ["detect_paper_jam", "detect_color_delta_cmyk"],
+            "registered_sensors": [
+              {"channel": "printer.media_present", "unit": "bool"},
+              {"channel": "ink.black.level", "unit": "percent", "safe_range": [5, 100]}
+            ],
+            "capabilities": {
+              "max_paper_size": "A3",
+              "supported_stocks": ["plain_80gsm", "matte_200gsm", "glossy_photo_260gsm"],
+              "max_dpi": 1200
+            }
+          }
+        ],
+        "risk_tier": "routine",
+        "status": {"reachable": true, "busy": false, "queue_length": 2},
+        "conformance_level": "L3",
+        "policy_hints": {
+          "approval_required_above": {"amount": 100.00, "currency": "USD"}
+        }
+      }
+    ]
+  },
+
+  "3_quote_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8K9D2A3PK4M0NVQH1C6RB8T",
+    "idempotency_key": "poster-cyberpunk-a3-2026-04-24-user-42",
+    "device_id": "cloudprint-us-west",
+    "domain": "manufacturing.print.2d.v1",
+    "asset": {
+      "url": "https://signed-storage.example.com/assets/01J8K9...poster.png",
+      "format": "image/png",
+      "hash_sha256": "9d4a7f3b2c1e0a8b6c5d4f3e2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b",
+      "size_bytes": 9872411
+    },
+    "payload": {
+      "paper_size": "A3",
+      "paper_stock": "matte_200gsm",
+      "dpi": 300,
+      "color_mode": "CMYK",
+      "copies": 1,
+      "finishing": []
+    },
+    "logistics": {
+      "carrier_preference": "standard",
+      "recipient": {
+        "name": "Jane Example",
+        "address_lines": ["742 Evergreen Terrace"],
+        "locality": "Springfield",
+        "region": "OR",
+        "postal_code": "97477",
+        "country": "US"
+      }
+    },
+    "budget_limit": {"amount": 25.00, "currency": "USD"},
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://alice/poster-agent"},
+      "trace_id": "trace-01J8K9D2A3"
+    }
+  },
+
+  "4_quote_response": {
+    "aimp_version": "1.0.0-draft",
+    "quote_id": "01J8K9D38BZQCX7H2VS0K1R9F4",
+    "device_id": "cloudprint-us-west",
+    "domain": "manufacturing.print.2d.v1",
+    "estimated_cost": {
+      "amount": 18.20,
+      "currency": "USD",
+      "breakdown": [
+        {"item": "print", "amount": 4.50},
+        {"item": "paper", "amount": 1.70},
+        {"item": "shipping", "amount": 12.00}
+      ]
+    },
+    "estimated_duration_seconds": 259200,
+    "valid_until": "2026-04-24T06:45:00Z",
+    "risk_tier": "routine",
+    "required_approvals": [],
+    "logistics_quote": {
+      "carrier": "FedEx",
+      "service_level": "Ground",
+      "estimated_delivery_date": "2026-04-28",
+      "cost": {"amount": 12.00, "currency": "USD"}
+    }
+  },
+
+  "5_execute_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8K9D4RXYA9BF6QN3H5D0K7V",
+    "device_id": "cloudprint-us-west",
+    "domain": "manufacturing.print.2d.v1",
+    "quote_id": "01J8K9D38BZQCX7H2VS0K1R9F4",
+    "audit_requirements": {
+      "ai_vision_checks": ["detect_paper_jam"]
+    },
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://alice/poster-agent"}
+    }
+  },
+
+  "6_execute_response": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8K9D5XPJZ3QM4R9B2C1D6H0",
+    "state": "LOCKED",
+    "telemetry_url": "https://gateway.example.com/v1/jobs/01J8K9D5XPJZ3QM4R9B2C1D6H0/telemetry",
+    "webhook_configured": true
+  },
+
+  "7_telemetry_final": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8K9D5XPJZ3QM4R9B2C1D6H0",
+    "state": "COMPLETED",
+    "progress": 1.0,
+    "updated_at": "2026-04-28T17:04:00Z",
+    "tracking": {
+      "carrier": "FedEx",
+      "tracking_number": "7721 5544 3322",
+      "tracking_url": "https://fedex.com/track?t=7721...."
+    },
+    "cost": {"stage": "settle", "amount": 18.20, "currency": "USD"}
+  }
+}

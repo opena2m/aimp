@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/core/capabilities.schema.json",
+  "title": "AIMP Device Capabilities",
+  "description": "Response entry for aimp.discover. Each device the caller has access to appears once.",
+  "type": "object",
+  "required": ["device_id", "domains", "risk_tier", "status"],
+  "properties": {
+    "device_id": {"type": "string"},
+    "display_name": {"type": "string"},
+    "vendor": {"type": "string"},
+    "model": {"type": "string"},
+    "firmware": {"type": "string"},
+    "location": {
+      "type": "object",
+      "description": "Physical locale; used for jurisdictional policy.",
+      "properties": {
+        "site": {"type": "string"},
+        "country": {"type": "string", "minLength": 2, "maxLength": 2}
+      }
+    },
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["domain", "schema_uri"],
+        "properties": {
+          "domain": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_]*(\\.[a-z0-9][a-z0-9_]*)+\\.v[0-9]+$"},
+          "schema_uri": {"type": "string", "format": "uri"},
+          "registered_vision_checks": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "registered_sensors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["channel", "unit"],
+              "properties": {
+                "channel": {"type": "string"},
+                "unit": {"type": "string"},
+                "required": {"type": "boolean", "default": false},
+                "safe_range": {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          },
+          "capabilities": {
+            "type": "object",
+            "description": "Domain-specific capability summary; bounded to the registered Domain Schema."
+          }
+        }
+      }
+    },
+    "risk_tier": {
+      "enum": ["routine", "restricted", "hazardous"],
+      "description": "Highest risk tier this device can reach under its current configuration."
+    },
+    "status": {
+      "type": "object",
+      "required": ["reachable", "busy"],
+      "properties": {
+        "reachable": {"type": "boolean"},
+        "busy": {"type": "boolean"},
+        "current_job_id": {"type": "string"},
+        "queue_length": {"type": "integer", "minimum": 0}
+      }
+    },
+    "consumables": {
+      "type": "array",
+      "description": "Optional inventory snapshot; lets agents quote without trial requests.",
+      "items": {
+        "type": "object",
+        "required": ["name", "available", "unit"],
+        "properties": {
+          "name": {"type": "string"},
+          "available": {"type": "number", "minimum": 0},
+          "unit": {"type": "string"},
+          "expires_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "policy_hints": {
+      "type": "object",
+      "description": "Non-authoritative hints about what policy will require at execute time.",
+      "properties": {
+        "approval_required_above": {
+          "type": "object",
+          "properties": {
+            "amount": {"type": "number"},
+            "currency": {"type": "string"}
+          }
+        },
+        "hitl_required_for_risk_tier": {"enum": ["restricted", "hazardous"]}
+      }
+    },
+    "conformance_level": {
+      "enum": ["L1", "L2", "L3"],
+      "description": "Reported conformance level (§00.4)."
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,143 @@
+{
+  "_comment": "AIMP Example 03 — Automated pipetting with mid-run bubble-detection pause. Scenario C in §07. Note: the `fluidics.pipette.v2` schema is referenced but not included in this draft; the structure below is illustrative.",
+
+  "1_quote_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KB01M3T6X8N2D5V7K4R0B9",
+    "idempotency_key": "protocol-rna-transfer-run-2026-04-24-07",
+    "device_id": "pipette-rob-07",
+    "domain": "fluidics.pipette.v2",
+    "payload": {
+      "tip_type": "200uL_filter",
+      "pipette_channel_count": 1,
+      "operations": [
+        {
+          "step": 1, "type": "PICKUP_TIP", "source": "tip_rack_1_A1"
+        },
+        {
+          "step": 2, "type": "ASPIRATE",
+          "source_well": "Plate_1_A1",
+          "volume_microliters": 15.0,
+          "aspirate_speed_ul_per_sec": 5.0,
+          "post_delay_seconds": 1
+        },
+        {
+          "step": 3, "type": "DISPENSE",
+          "destination_well": "Plate_2_B3",
+          "volume_microliters": 15.0,
+          "dispense_speed_ul_per_sec": 10.0,
+          "blow_out": true
+        },
+        {
+          "step": 4, "type": "ASPIRATE",
+          "source_well": "Plate_1_A2",
+          "volume_microliters": 15.0,
+          "aspirate_speed_ul_per_sec": 5.0
+        },
+        {
+          "step": 5, "type": "DISPENSE",
+          "destination_well": "Plate_2_B4",
+          "volume_microliters": 15.0,
+          "dispense_speed_ul_per_sec": 10.0
+        },
+        {
+          "step": 6, "type": "DROP_TIP", "destination": "waste"
+        }
+      ]
+    },
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://lab/protocol-agent"}
+    }
+  },
+
+  "2_quote_response": {
+    "aimp_version": "1.0.0-draft",
+    "quote_id": "01J8KB02X9YG3R6K4N1B8M0V7D",
+    "device_id": "pipette-rob-07",
+    "domain": "fluidics.pipette.v2",
+    "estimated_cost": {
+      "amount": 0.40,
+      "currency": "USD",
+      "breakdown": [
+        {"item": "tips", "amount": 0.15, "quantity": 1, "unit": "count"},
+        {"item": "operating", "amount": 0.25}
+      ]
+    },
+    "estimated_duration_seconds": 120,
+    "valid_until": "2026-04-24T08:15:00Z",
+    "risk_tier": "restricted"
+  },
+
+  "3_execute_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KB03NR5C8V2M9K1T4B6D7H",
+    "device_id": "pipette-rob-07",
+    "domain": "fluidics.pipette.v2",
+    "quote_id": "01J8KB02X9YG3R6K4N1B8M0V7D",
+    "audit_requirements": {
+      "sensors": ["liquid_level", "tip_presence", "z_axis_pos"],
+      "ai_vision_checks": ["detect_bubble_formation", "detect_tip_loose"],
+      "snapshot_interval_seconds": 30,
+      "snapshot_channels": ["camera.workcell"]
+    },
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://lab/protocol-agent"}
+    }
+  },
+
+  "4_telemetry_bubble_detected": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8KB04G2Y3B5K8R9D1M7V4N6",
+    "state": "AUDITING",
+    "progress": 0.60,
+    "updated_at": "2026-04-24T08:13:42Z",
+    "sensors": [
+      {"channel": "liquid_level", "value": 2.1, "unit": "mm", "at": "2026-04-24T08:13:42Z", "quality": "ok"},
+      {"channel": "tip_presence", "value": 1, "unit": "bool", "at": "2026-04-24T08:13:42Z", "quality": "ok"}
+    ],
+    "media": [
+      {
+        "channel": "camera.workcell",
+        "url": "https://media.example.com/signed/01J8KB04.../bubble_frame.jpg?token=...",
+        "captured_at": "2026-04-24T08:13:42Z",
+        "mime": "image/jpeg",
+        "signature": "ed25519:b3e5..."
+      }
+    ],
+    "vision_checks": [
+      {
+        "check": "detect_bubble_formation",
+        "verdict": "warn",
+        "confidence": 0.88,
+        "evidence_media": ["https://media.example.com/signed/01J8KB04.../bubble_frame.jpg?token=..."],
+        "recommended_action": "PAUSE",
+        "signed_by": "audit-agent://lab/vision",
+        "at": "2026-04-24T08:13:43Z"
+      }
+    ],
+    "human_action_required": {
+      "reason": "Bubble detected during ASPIRATE step 4; policy pauses on `warn` for restricted fluidics.",
+      "review_url": "https://review.example.com/jobs/01J8KB04.../inspect",
+      "expires_at": "2026-04-24T09:13:42Z"
+    }
+  },
+
+  "5_resume_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KB05PQ4J7C9B2D6K0V3M8N",
+    "decision": "CONTINUE",
+    "approval_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkFJTVAtQVBQUk9WQUwtMSJ9.ey...",
+    "envelope": {
+      "principal": {"kind": "human", "id": "human://scientist/carol@lab.example"}
+    }
+  },
+
+  "6_telemetry_complete": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8KB04G2Y3B5K8R9D1M7V4N6",
+    "state": "COMPLETED",
+    "progress": 1.0,
+    "updated_at": "2026-04-24T08:15:17Z",
+    "cost": {"stage": "settle", "amount": 0.40, "currency": "USD"}
+  }
+}

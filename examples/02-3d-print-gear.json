@@ -1,0 +1,130 @@
+{
+  "_comment": "AIMP Example 02 — 3D-print a PETG gear with mid-build human review. Scenario B in §07.",
+
+  "1_quote_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KA01WV4X0PM3D2ZN9K4R6T",
+    "idempotency_key": "gear-v3-2026-04-24",
+    "device_id": "printer-lab-01",
+    "domain": "manufacturing.additive.fdm.v1",
+    "asset": {
+      "url": "https://signed-storage.example.com/assets/gear-v3.gcode",
+      "format": "model/gcode",
+      "hash_sha256": "3c5b7e9d1f2a4c6b8e0d2f4a6c8e1b3d5f7a9c0e2d4f6a8c0b2e4f6a8c1d3f5b",
+      "size_bytes": 2048310
+    },
+    "payload": {
+      "material_requirement": "PETG",
+      "parameters": {
+        "nozzle_temp_celsius": 240,
+        "bed_temp_celsius": 80,
+        "layer_height_mm": 0.2,
+        "infill_percent": 35,
+        "infill_pattern": "gyroid",
+        "perimeter_count": 3,
+        "print_speed_mm_per_sec": 60
+      },
+      "build_volume_hint": {"x_mm": 82, "y_mm": 82, "z_mm": 18}
+    },
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://fab/executor"}
+    }
+  },
+
+  "2_quote_response": {
+    "aimp_version": "1.0.0-draft",
+    "quote_id": "01J8KA02HG7Z0T5M9N1V2B4K8R",
+    "device_id": "printer-lab-01",
+    "domain": "manufacturing.additive.fdm.v1",
+    "estimated_cost": {
+      "amount": 2.30,
+      "currency": "USD",
+      "breakdown": [
+        {"item": "material", "amount": 1.40, "quantity": 28, "unit": "g"},
+        {"item": "energy", "amount": 0.30, "quantity": 0.22, "unit": "kWh"},
+        {"item": "operating", "amount": 0.60}
+      ]
+    },
+    "estimated_duration_seconds": 4380,
+    "valid_until": "2026-04-24T07:00:00Z",
+    "risk_tier": "restricted",
+    "required_approvals": [
+      {"principal_kind": "agent", "role": "finance", "reason": "restricted tier"}
+    ]
+  },
+
+  "3_execute_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KA03QJYM2C6R8V1K3B7D9H",
+    "device_id": "printer-lab-01",
+    "domain": "manufacturing.additive.fdm.v1",
+    "quote_id": "01J8KA02HG7Z0T5M9N1V2B4K8R",
+    "audit_requirements": {
+      "snapshot_interval_seconds": 300,
+      "snapshot_channels": ["camera.top"],
+      "video_clip_on_state_change": true,
+      "sensors": ["extruder_temp", "chamber.temp", "bed.temp"],
+      "ai_vision_checks": ["detect_spaghetti_failure"],
+      "pause_for_human_at": ["mid_build_50_percent"]
+    },
+    "envelope": {
+      "principal": {"kind": "agent", "id": "assistant://fab/executor"},
+      "approval_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkFJTVAtQVBQUk9WQUwtMSJ9.ey..."
+    }
+  },
+
+  "4_telemetry_mid_audit": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8KA04F0RD7B9H1M4V8K2N6P",
+    "state": "AUDITING",
+    "progress": 0.50,
+    "updated_at": "2026-04-24T06:39:00Z",
+    "sensors": [
+      {"channel": "extruder_temp", "value": 240.1, "unit": "degC", "at": "2026-04-24T06:39:00Z", "quality": "ok"},
+      {"channel": "chamber.temp", "value": 35.2, "unit": "degC", "at": "2026-04-24T06:39:00Z", "quality": "ok"}
+    ],
+    "media": [
+      {
+        "channel": "camera.top",
+        "url": "https://media.example.com/signed/01J8KA04.../frame_mid.jpg?token=...",
+        "captured_at": "2026-04-24T06:39:00Z",
+        "mime": "image/jpeg",
+        "signature": "ed25519:a7f6..."
+      }
+    ],
+    "vision_checks": [
+      {
+        "check": "detect_spaghetti_failure",
+        "verdict": "pass",
+        "confidence": 0.94,
+        "recommended_action": "CONTINUE",
+        "signed_by": "audit-agent://fab/vision",
+        "at": "2026-04-24T06:39:01Z"
+      }
+    ],
+    "human_action_required": {
+      "reason": "mid_build_50_percent checkpoint reached",
+      "review_url": "https://review.example.com/jobs/01J8KA04.../inspect",
+      "expires_at": "2026-04-24T07:39:00Z"
+    }
+  },
+
+  "5_resume_request": {
+    "aimp_version": "1.0.0-draft",
+    "request_id": "01J8KA05A1YN4D7E2K6R9M3B8V",
+    "decision": "CONTINUE",
+    "approval_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkFJTVAtQVBQUk9WQUwtMSJ9.ey...",
+    "envelope": {
+      "principal": {"kind": "human", "id": "human://operator/bob@fab.example"}
+    }
+  },
+
+  "6_telemetry_complete": {
+    "aimp_version": "1.0.0-draft",
+    "job_id": "01J8KA04F0RD7B9H1M4V8K2N6P",
+    "state": "COMPLETED",
+    "progress": 1.0,
+    "updated_at": "2026-04-24T07:52:18Z",
+    "cost": {"stage": "settle", "amount": 2.28, "currency": "USD"}
+  }
+}

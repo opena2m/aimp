@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/core/quote-response.schema.json",
+  "title": "AIMP Quote Response",
+  "description": "Response to aimp.quote. Returns a bindable quote that can be executed within its validity window.",
+  "type": "object",
+  "required": ["aimp_version", "quote_id", "device_id", "domain", "estimated_cost", "estimated_duration_seconds", "valid_until", "risk_tier"],
+  "properties": {
+    "aimp_version": {"type": "string"},
+    "quote_id": {
+      "type": "string",
+      "description": "Opaque identifier for this quote. ULID RECOMMENDED.",
+      "minLength": 1
+    },
+    "device_id": {"type": "string"},
+    "domain": {"type": "string"},
+    "estimated_cost": {
+      "type": "object",
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": {"type": "number", "minimum": 0},
+        "currency": {"type": "string", "minLength": 3, "maxLength": 3},
+        "breakdown": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "amount"],
+            "properties": {
+              "item": {"type": "string", "description": "e.g. 'material', 'energy', 'labor', 'shipping'"},
+              "amount": {"type": "number"},
+              "quantity": {"type": "number"},
+              "unit": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "estimated_duration_seconds": {"type": "integer", "minimum": 0},
+    "estimated_resource_consumption": {
+      "type": "object",
+      "description": "Physical resources to be consumed (material mass, energy, etc.) for settlement and auditing.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["value", "unit"],
+        "properties": {
+          "value": {"type": "number"},
+          "unit": {"type": "string"}
+        }
+      }
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "After this instant the quote is no longer redeemable."
+    },
+    "risk_tier": {
+      "enum": ["routine", "restricted", "hazardous"],
+      "description": "Gateway's classification of this specific job (not merely the domain default)."
+    },
+    "required_approvals": {
+      "type": "array",
+      "description": "Additional principals whose approval_token will be demanded at execute time.",
+      "items": {
+        "type": "object",
+        "required": ["principal_kind", "reason"],
+        "properties": {
+          "principal_kind": {"enum": ["human", "agent"]},
+          "role": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "policy_notes": {
+      "type": "array",
+      "description": "Human-readable advisory notes from policy evaluation (e.g., 'budget 80 % consumed').",
+      "items": {"type": "string"}
+    },
+    "logistics_quote": {
+      "type": "object",
+      "description": "Shipping / delivery cost breakdown when applicable.",
+      "properties": {
+        "carrier": {"type": "string"},
+        "service_level": {"type": "string"},
+        "estimated_delivery_date": {"type": "string", "format": "date"},
+        "cost": {
+          "type": "object",
+          "properties": {
+            "amount": {"type": "number"},
+            "currency": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

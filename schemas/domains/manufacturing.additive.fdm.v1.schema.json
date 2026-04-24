@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimp.dev/schemas/domains/manufacturing.additive.fdm.v1.schema.json",
+  "title": "Domain Schema — manufacturing.additive.fdm.v1",
+  "description": "Fused-deposition-modeling 3D printing. Consumes G-code or supported slicer project files; produces a single physical part.",
+  "type": "object",
+  "required": ["material_requirement", "parameters"],
+  "properties": {
+    "material_requirement": {
+      "type": "string",
+      "description": "Human-readable material identifier; MUST match one of the device's loaded consumables (e.g., 'PLA', 'PETG', 'ABS', 'ASA', 'TPU_95A').",
+      "enum": ["PLA", "PETG", "ABS", "ASA", "TPU_95A", "NYLON", "PC", "PLA_CF", "PETG_CF"]
+    },
+    "color_hint": {
+      "type": "string",
+      "description": "Optional hint; gateway MAY reject if no matching filament is loaded."
+    },
+    "parameters": {
+      "type": "object",
+      "required": ["nozzle_temp_celsius", "bed_temp_celsius", "layer_height_mm"],
+      "properties": {
+        "nozzle_temp_celsius": {
+          "type": "number",
+          "minimum": 170,
+          "maximum": 320
+        },
+        "bed_temp_celsius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "chamber_temp_celsius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 90
+        },
+        "layer_height_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 0.6
+        },
+        "infill_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "infill_pattern": {
+          "enum": ["grid", "gyroid", "honeycomb", "lines", "triangles", "cubic"]
+        },
+        "perimeter_count": {"type": "integer", "minimum": 1, "maximum": 20},
+        "top_layers": {"type": "integer", "minimum": 0, "maximum": 20},
+        "bottom_layers": {"type": "integer", "minimum": 0, "maximum": 20},
+        "print_speed_mm_per_sec": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 600
+        },
+        "supports": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "style": {"enum": ["normal", "tree", "organic"]},
+            "overhang_threshold_deg": {"type": "number", "minimum": 0, "maximum": 90}
+          }
+        },
+        "adhesion": {
+          "enum": ["none", "skirt", "brim", "raft"]
+        },
+        "cooling_fan_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "build_volume_hint": {
+      "type": "object",
+      "description": "OPTIONAL declared bounding box. Gateway MAY reject if exceeds device.",
+      "properties": {
+        "x_mm": {"type": "number", "minimum": 0},
+        "y_mm": {"type": "number", "minimum": 0},
+        "z_mm": {"type": "number", "minimum": 0}
+      }
+    },
+    "post_processing": {
+      "type": "array",
+      "description": "Requested post-processing steps the device or attached cell can perform.",
+      "items": {
+        "enum": ["remove_supports", "sanding", "annealing", "smoothing_vapor", "uv_cure"]
+      }
+    }
+  },
+  "additionalProperties": false
+}
